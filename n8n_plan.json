@@ -1,0 +1,495 @@
+{
+  "name": "n8n_plan",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "travel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "71f16381-da59-41e6-80ca-f16e921a0ccf",
+      "name": "Webhook",
+      "webhookId": "9885c4fd-bc2b-427f-91bd-a840ffdfa953"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        2480,
+        0
+      ],
+      "id": "fda84b55-7f99-449a-ad94-36a31db8aac9",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d8f3de1-f753-440f-a3e3-0d4485881eab",
+              "name": "origin",
+              "value": "={{ $json.body.origin }}",
+              "type": "string"
+            },
+            {
+              "id": "54191709-e4c5-4c7a-a395-0ca5d9a23e73",
+              "name": "destination",
+              "value": "={{ $json.body.destination }}",
+              "type": "string"
+            },
+            {
+              "id": "dac57352-0762-4c8b-90ac-9106dd319423",
+              "name": "departure_date",
+              "value": "={{ $json.body.departure_date }}",
+              "type": "string"
+            },
+            {
+              "id": "92361e99-6564-40f4-ae18-b21e945674d7",
+              "name": "return_date",
+              "value": "={{ $json.body.return_date }}",
+              "type": "string"
+            },
+            {
+              "id": "ad72ae22-1a08-4d87-ad91-d3e9a1a459e2",
+              "name": "travelers",
+              "value": "={{ $json.body.travelers }}",
+              "type": "number"
+            },
+            {
+              "id": "d856760e-b3d7-4f98-bd0d-f308f9ab12e8",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "ed28d79e-25d4-40a7-a732-990f7362dc90",
+              "name": "activities",
+              "value": "={{ $json.body.activities }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "91ead449-37f7-4636-97e7-54bb64c63464",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=origin :{{ $json.origin }}\ndestination:{{ $json.destination }}\ndeparture_date:{{ $json.departure_date }}\nreturn_date:{{ $json.return_date }}\n",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Turn the origin and destination into their airport code format\n\nMake sure the deparure date and return date are in the future , not the past \n\nHere is the current date  {{ $now }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        440,
+        0
+      ],
+      "id": "d5d99286-1cec-404b-9374-a03877e3df56",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"origin\": {\n      \"type\": \"string\",\n      \"description\": \"The origin\"\n    },\n    \"destination\": {\n      \"type\": \"string\",\n      \"description\": \"The destination\"\n    },\n    \"departure\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"The departure date (YYYY-MM-DD)\"\n    },\n    \"return\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"The return date (YYYY-MM-DD)\"\n    }\n  },\n  \"required\": [\"origin\", \"destination\", \"departure\", \"return\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        680,
+        220
+      ],
+      "id": "bc5035b0-3626-4273-a734-32a7ea8fc9b2",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $('Edit Fields').item.json.activities }} in {{ $('Edit Fields').item.json.destination }}\",\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 3,\n  \"time_range\": null,\n  \"days\": 7,\n  \"include_answer\": true,\n  \"include_raw_content\": true,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "cba10c07-60bf-481f-ba53-fbfe4e41939e",
+      "name": "activities",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "of3VGxPFsg2BLeag",
+          "name": "tavily custom"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_hotels"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('Basic LLM Chain').item.json.output.destination }}"
+            },
+            {
+              "name": "check_in_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.departure }}"
+            },
+            {
+              "name": "check_out_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.return }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $('Edit Fields').item.json.travelers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "4d585b1d-8e2a-4fd5-b249-f16e3f2b93d0",
+      "name": "Resorts",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "KiXivE4jOXDtx46S",
+          "name": "Query Auth 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_flights"
+            },
+            {
+              "name": "departure_id",
+              "value": "={{ $('Basic LLM Chain').item.json.output.origin }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Basic LLM Chain').item.json.output.destination }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.departure }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.return }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $('Edit Fields').item.json.travelers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1260,
+        0
+      ],
+      "id": "8f96c7fb-7d76-45da-9df9-a448277ba363",
+      "name": "flights",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "KiXivE4jOXDtx46S",
+          "name": "Query Auth 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=#Flights from {{ $('Edit Fields').item.json.origin }} to {{ $('Edit Fields').item.json.destination }} on {{ $('Edit Fields').item.json.departure_date }} till {{ $('Edit Fields').item.json.return_date }}\n\n1){{ $json.best_flights[0].flights[0].airline }},{{ $json.best_flights[0].flights[0].departure_airport.time }},{{ $json.best_flights[0].flights[0].duration }} , {{ $json.best_flights[0].flights[0].airplane }}\n\nFeatures:{{ $json.best_flights[0].flights[0].extensions }}\n\nPrice: ${{ $json.best_flights[0].price }} , {{ $json.best_flights[0].type }}\n\n2) {{ $json.best_flights[1].flights[0].airline }}, {{ $json.best_flights[1].flights[0].arrival_airport.time }} , {{ $json.best_flights[1].flights[0].duration }} {{ $json.best_flights[1].flights[0].airplane }}\n\nFeatures :{{ $json.best_flights[1].flights[0].extensions }}\nPrice :${{ $json.best_flights[1].price }}\n\n3){{ $json.best_flights[2].flights[0].airline }}, {{ $json.best_flights[2].flights[0].arrival_airport.time }} , {{ $json.best_flights[2].flights[0].duration }} , {{ $json.best_flights[2].flights[0].airplane }}\n\nFeatures :{{ $json.best_flights[2].flights[0].extensions }}\nPrice :${{ $json.best_flights[2].price }}\n\n#Resorts:\n1) {{ $('Resorts').item.json.properties[0].name }}\nLink :{{ $('Resorts').item.json.properties[0].link }}\nImage :{{ $('Resorts').item.json.properties[0].images[0].original_image }}\n\nRate per night : {{ $('Resorts').item.json.properties[0].rate_per_night.lowest }}\nTotal rate : {{ $('Resorts').item.json.properties[0].total_rate.lowest }}\n\nNearby places :\n{{ $('Resorts').item.json.properties[0].nearby_places[0].name }} , {{ $('Resorts').item.json.properties[0].nearby_places[1].transportations[0].duration }} , {{ $('Resorts').item.json.properties[0].nearby_places[1].transportations[0].type }}\n{{ $('Resorts').item.json.properties[0].nearby_places[2].name }} ,{{ $('Resorts').item.json.properties[0].nearby_places[2].transportations[0].duration }} , {{ $('Resorts').item.json.properties[0].nearby_places[2].transportations[0].type }}\n\nAmentities: {{ $('Resorts').item.json.properties[0].amenities }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=## Overview\nYou are an expert email writer specializing in creating travel plans. Your job is to output\nan HTML email with clickable links. You must output a subject and an emailBody in separate\nparameters.\n\n## Objective\nYou will receive information about a vacation plan. Break the email into 3 sections: Flights,\nResorts, and Activities\n\n## Output format\n- The email should be structured as HTML that will be sent through email. Use headers to separate the sections\n- Add a horizontal line to end each section\n\n## Subject\n- Should contain the travel dates and the arrival location\n\n## Introduction\n- The goal of this section is to get the traveler excited about their upcoming trip\n- You must add a horizontal line after this section, before the 'Flights' section\n\n## Flights\n- List the departure and return dates and locations\n- List the flights and details about each one\n\n## Resorts\n- List each resort with a clickable link as the name of the resort\n- Number the list of resorts\n- Output images in HTML format like this:\n  <img src=\"[image url here]\" style=\"max-width:20%; height:auto;\">\n- Leave a new line between the resort name and its image and after the image\n\n## Activities\n- List the activities with clickable links as the name of the activity\n- Provide a brief description of each activity\n\n## Signoff\n- Sign the email off in a friendly way.\n- Sign off as TrueHorizon Travel Team\n\n## Important \nDo not output more then 1000 words\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        0
+      ],
+      "id": "e8fbdd75-ae4a-4b49-992d-a86f51e78f97",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"the email subject\"\n    },\n    \"emailBody\": {\n      \"type\": \"string\",\n      \"description\": \"the email body\"\n    }\n  },\n  \"required\": [\"subject\", \"emailBody\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1660,
+        220
+      ],
+      "id": "32173a18-99a6-4932-a470-300c04cf55e0",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        220
+      ],
+      "id": "57f14679-ab7b-4e96-b980-fc3732feca7e",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Uvph53w0xMyNBTlU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "rabiasghaier2@gmail.com",
+        "subject": "={{ $json.output.properties.subject.description }}",
+        "message": "={{ $json.output.properties.emailBody.description }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1840,
+        0
+      ],
+      "id": "1961a3ee-1b49-4c32-9c41-ec924c3049f3",
+      "name": "Gmail",
+      "webhookId": "4ad9f3e4-02eb-4ddf-ba73-9c014b8cfb0c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "F96ylaEqaqx12nvR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        500,
+        220
+      ],
+      "id": "68aa737b-a2fd-40ca-8dc5-cbf8b269ff0d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Uvph53w0xMyNBTlU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "activities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "activities": {
+      "main": [
+        [
+          {
+            "node": "Resorts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resorts": {
+      "main": [
+        [
+          {
+            "node": "flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "flights": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aa8fba74-9bf3-4667-8bcb-5369cea134cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d7a95011b2cc6b6e47997562d1b777dd9db47b03a310e1b00aad00b8539655a3"
+  },
+  "id": "flw3KWW0Cls6gA3E",
+  "tags": []
+}
